@@ -5,10 +5,9 @@ output:
     df_print: paged
 ---
 
-T.C. Çevre Şehircilik ve İklim Değişikliği bakanlığının ülke genelinde yaptığı hava kalitesi
-ölçümleri [https://sim.csb.gov.tr/Services/AirQuality](https://sim.csb.gov.tr/Services/AirQuality) adresinde bulunan web uygulamasında istasyon bazında görsellenebilmektedir. 
+T.C. Çevre Şehircilik ve İklim Değişikliği bakanlığının ülke genelinde yaptığı hava kalitesi ölçümleri <https://sim.csb.gov.tr/Services/AirQuality> adresinde bulunan web uygulamasında istasyon bazında görsellenebilmektedir.
 
-Ham veriler ise [https://sim.csb.gov.tr/STN/STN_Report/StationDataDownloadNew](https://sim.csb.gov.tr/STN/STN_Report/StationDataDownloadNew) adresinden *Excel* formatında indirlebilmektedir. 
+Ham veriler ise <https://sim.csb.gov.tr/STN/STN_Report/StationDataDownloadNew> adresinden *Excel* formatında indirlebilmektedir.
 
 ## Egzersiz 1 - Veri ithali
 
@@ -16,45 +15,60 @@ Ham veriler ise [https://sim.csb.gov.tr/STN/STN_Report/StationDataDownloadNew](h
 
 Örnek :
 
-- Mart ayında doğduysanız Mart 2023 verisi (Çünkü Mart 2024 bitmedi)
-- Aralık ayında doğduysanız Aralık 2023 verisi
-- Şubat ayında doğduysanız Şubat 2024 verisi
+-   Mart ayında doğduysanız Mart 2023 verisi (Çünkü Mart 2024 bitmedi)
+-   Aralık ayında doğduysanız Aralık 2023 verisi
+-   Şubat ayında doğduysanız Şubat 2024 verisi
 
 Yaratacağınız data.frame nesnesinin sütun isimleri Excel'de bulunan değişken sütun isimlerini içermelidir. *havaK* nesnesinin ilk 10 satırının raporda gözükmesini sağlayın.
 
 ```{r}
-# Excel dosyasındaki ham verileri data.frame formatında R'a ithal edin
-# havaK <- <kodu tamamla>
+library(readxl)
+veri <- read_excel("C:/Users/ismet/Desktop/veri2.xlsx")
+havaK <- as.data.frame(veri)
 ```
 
 ## Egzersiz 2 - Veri Kalite Kontrolü
 
 ### Zaman sütunu
+
 Zaman değerlerini içeren sütunun isminin **Time** olmasını sağlayın
+
 ```{r}
-#  <kodu tamamla>
+ilk_isimler <- colnames(havaK)
+son_isimler <- c("Time", "Value1","Value2")
+colnames(havaK) <- son_isimler
 ```
 
-
-*havaK$Time* adlı değişkendeki bütün verilerin **POSIXct** tipinde olmasını sağlayın. 
+*havaK\$Time* adlı değişkendeki bütün verilerin **POSIXct** tipinde olmasını sağlayın.
 
 ```{r}
-# <kodu tamamla>
+havaK$Time <- as.POSIXct(havaK$Time)
 ```
 
 *Time* sütunu dışındaki bütün sütunların tipinin **numeric** olmasını sağlayın. *havaK* nesnesinin ilk 10 satırının raporda gözükmesini sağlayın.
 
 ```{r}
-# <kodu tamamla>
+havaK$Value1 <- apply(havaK["Value1"], 2, function(x) as.numeric(gsub(",", ".", x)))
+havaK$Value2 <- apply(havaK["Value2"], 2, function(x) as.numeric(gsub(",", ".", x)))
+havaK$Value1 <- as.numeric(havaK$Value1)
+havaK$Value2 <- as.numeric(havaK$Value2)
 ```
 
 ## Egzersiz 3 - Veri Görselleme
+
 *dygraphs* paketini kullanarak veri setinizde bulunan iki farklı parametreyi aynı grafik üzerinde iki değişik aks kullanarak (bkz örnek) çizin.
 
 ![](graphic_example.png "İki akslı grafik örneği")
 
-
 ```{r}
+# Nedenini bilmediğim şekilde burdan çalıştırınca grafik çıkmıyor fakat kodu kopyalayıp çalıştırınca grafik çıkıyor.
+library(xts)
+na_indices <- which(is.na(havaK$Time))
+havaK_clean <- havaK[-na_indices, ]
+havaK_xts <- xts(havaK_clean[, c("Value1", "Value2")], order.by = havaK_clean$Time)
+colnames(havaK_xts) <- c("Value1", "Value2")
 library(dygraphs)
-#  <kodu tamamla>
+dygraph(havaK_xts) %>%
+dySeries("Value1", label = "Value1")
+dySeries("Value2", label = "Value2")
 ```
